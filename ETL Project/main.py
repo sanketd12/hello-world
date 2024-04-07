@@ -5,19 +5,19 @@ import requests
 import mysql.connector
 
 df_titles_and_movies = pd.read_csv('netflix_titles.csv') #csv files of netlix movie/data from kaggle
-df_ratings = pd.read_csv('NetflixTVShowsAndMovies.csv') #csv file of netflix movie/show from kaggle - includes imdb
+df_ratings = pd.read_csv('NetflixTVShowsAndMovies.csv') #csv file of netflix movie/show from kaggle - includes imdb ratings and number of votes
 
 df_titles_and_movies = df_titles_and_movies[["title", "type", "director", "release_year", "duration", "country", "listed_in", "rating"]]
 
 df_ratings = df_ratings[["title", "release_year", "imdb_score", "imdb_votes"]]
 
-df_titles_and_movies['director'] = df_titles_and_movies['director'].apply(lambda x: x.split(",")[0] if pd.notna(x) else x)
+df_titles_and_movies['director'] = df_titles_and_movies['director'].apply(lambda x: x.split(",")[0] if pd.notna(x) else x) #these lines get the first of the director, country, genre that is in each of their respective columns for each for simplicity purposes.
 df_titles_and_movies['country'] = df_titles_and_movies['country'].apply(lambda x: x.split(",")[0] if pd.notna(x) else x)
 df_titles_and_movies['listed_in'] = df_titles_and_movies['listed_in'].apply(lambda x: x.split(",")[0] if pd.notna(x) else x)
 
 
 common_titles_df = pd.merge(df_titles_and_movies, df_ratings, on=['title', 'release_year'], how='inner') #merging two dataframes based on common titles for simplicity purposes
-common_titles_df = common_titles_df.head(100) #truncating dataframe to first 100 titles - 2000+ values was way too slow and hard to work with
+common_titles_df = common_titles_df.head(100) #truncating dataframe to first 100 titles - 2000+ values was way too slow due to API calls and hard to work with
 common_titles_df = common_titles_df.dropna()
 common_titles_df = common_titles_df.rename(columns={
     'duration': 'Duration',
@@ -38,7 +38,7 @@ for country in common_titles_df['country']:
     if not isinstance(country, str):
         continue
     country = country.strip()
-    if not country or country in processed_countries:
+    if not country or country in processed_countries: #makes sure countries that are called with the API are unique, and checks if it is a string or not due to NaN values
         continue
     processed_countries.add(country)
 
@@ -49,7 +49,7 @@ for country in common_titles_df['country']:
     }
     response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
+    if response.status_code == 200: #API calls and conversion to dataframe
         countryData = response.json()
         capital = countryData[0].get('capital', [None])[0]
         data = {
@@ -58,13 +58,15 @@ for country in common_titles_df['country']:
             "Population": countryData[0]['population']
         }
         countryDict[country] = data
+    else:
+      print('Error:', response.status_code)
 
 df_country = pd.DataFrame(list(countryDict.values())).dropna()
 
 
 print(df_country)
 
-from mysql.connector import Error
+from mysql.connector import Error #SQL section
 
 
 def create_table(connection, query): #function that creates all the tables
@@ -155,7 +157,7 @@ def insert_ratings_table_data(connection, df_ratings):
     cursor = connection.cursor()
     for _, row in df_ratings.iterrows():
         title_id = get_title_id(connection, row['title'], row['ReleaseYear'])
-        if title_id:  # Ensure the title exists in the Titles table
+        if title_id:  #ensures the title exists in the Titles table
             values = (title_id, row['RatingValue'], row['NumberOfVotes'])
             cursor.execute(query, values)
     connection.commit()
