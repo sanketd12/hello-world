@@ -1,3 +1,5 @@
+I worked on this with Andre Galistinos
+
 Discord Bot
 Here are the commands you can use:
 !help - Displays this message
