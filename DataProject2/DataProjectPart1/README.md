@@ -1,0 +1,3 @@
+Analysis of Project Results:
+1. For the Pi Values Over Time data that was gathered, it seems that most of the values given for pi seem to be close approximations to the true value of pi, with a starting value of 4 when the factor value is equal to 1.
+2. As for the Factor Values Over Time data, they seem to be increasing in cubic fashion. The factor values can be represented as x^3, with x growing by 1 every minute. This pattern seems to start at x = 1,and stop when x = 59 and then this pattern repeats. X additionally corresponds to the minute value of the current time, so at 18:59 PM, the factor value was equivalent to 59^3.
